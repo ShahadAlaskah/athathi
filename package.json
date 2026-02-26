@@ -1,0 +1,13 @@
+{
+  "name": "athathi-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "api:dev": "npm run dev --workspace=@athathi/api",
+    "web:dev": "npm run dev --workspace=@athathi/web",
+    "db:migrate": "npm run migrate --workspace=@athathi/api",
+    "db:seed": "npm run seed --workspace=@athathi/api"
+  }
+}

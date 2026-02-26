@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --primary: #2563EB;
+    --primary-hover: #1D4ED8;
+    --background: #F9FAFB;
+    --surface: #FFFFFF;
+    --border: #E5E7EB;
+    --text-primary: #111827;
+    --text-secondary: #6B7280;
+    --success: #16A34A;
+    --warning: #D97706;
+    --error: #DC2626;
+
+    --radius-btn: 8px;
+    --radius-card: 12px;
+}
+
+body {
+    background-color: var(--background);
+    background: #f0f4ff;
+    /* Temporary test color */
+    color: var(--text-primary);
+    font-family: 'Inter', 'IBM Plex Sans Arabic', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+    .btn-primary {
+        @apply bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-2 rounded-[8px] transition-colors font-medium;
+    }
+
+    .card {
+        @apply bg-white border border-[#E5E7EB] rounded-[12px] shadow-sm;
+    }
+
+    .input-field {
+        @apply w-full border border-[#E5E7EB] rounded-[8px] px-3 py-2 focus:ring-2 focus:ring-[#2563EB] focus:outline-none;
+    }
+}
