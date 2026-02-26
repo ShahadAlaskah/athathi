@@ -20,6 +20,8 @@ export default function RequestDetailsPage({ params }: { params: Promise<{ id: s
     const [selectedOfferForAccept, setSelectedOfferForAccept] = useState<any>(null);
     const [isAccepting, setIsAccepting] = useState(false);
     const [isAcceptedSuccess, setIsAcceptedSuccess] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'COD'>('CARD');
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
     const [offerForm, setOfferForm] = useState({
         price: '',
         estimatedDays: '',
@@ -89,31 +91,37 @@ export default function RequestDetailsPage({ params }: { params: Promise<{ id: s
     const handleAcceptOffer = async () => {
         if (!token || !selectedOfferForAccept) return;
 
-        setIsAccepting(true);
-        try {
-            const res = await fetch(`http://localhost:4000/offers/${selectedOfferForAccept.id}/accept`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+        setIsProcessingPayment(true);
 
-            if (res.ok) {
-                setIsAcceptedSuccess(true);
-                setTimeout(() => {
-                    router.push('/dashboard');
-                }, 3000);
-            } else {
-                const data = await res.json();
-                alert(data.message || 'فشل قبول العرض');
+        // Simulate payment gateway delay (1.5 seconds)
+        setTimeout(async () => {
+            setIsAccepting(true);
+            try {
+                const res = await fetch(`http://localhost:4000/offers/${selectedOfferForAccept.id}/accept`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (res.ok) {
+                    setIsAcceptedSuccess(true);
+                    setTimeout(() => {
+                        router.push('/dashboard');
+                    }, 3000);
+                } else {
+                    const data = await res.json();
+                    alert(data.message || 'فشل قبول العرض');
+                    setIsAcceptModalOpen(false);
+                }
+            } catch (err) {
+                alert('حدث خطأ أثناء قبول العرض');
                 setIsAcceptModalOpen(false);
+            } finally {
+                setIsAccepting(false);
+                setIsProcessingPayment(false);
             }
-        } catch (err) {
-            alert('حدث خطأ أثناء قبول العرض');
-            setIsAcceptModalOpen(false);
-        } finally {
-            setIsAccepting(false);
-        }
+        }, paymentMethod === 'CARD' ? 2000 : 500);
     };
 
     if (authLoading || isLoading) return <div className="p-20 text-center animate-pulse text-xl">جاري التحميل...</div>;
@@ -122,6 +130,29 @@ export default function RequestDetailsPage({ params }: { params: Promise<{ id: s
     const isOwner = user?.id === request.clientId;
     const isProvider = user?.role === 'PROVIDER';
     const hasAlreadyOffered = request.offers?.some((o: any) => o.userId === user?.id);
+
+    const translateCity = (city: string) => {
+        const CITIES: Record<string, string> = {
+            'Riyadh': 'الرياض',
+            'Jeddah': 'جدة',
+            'Dammam': 'الدمام',
+            'Mecca': 'مكة المكرمة',
+            'Medina': 'المدينة المنورة',
+            'Khobar': 'الخبر',
+            'Abha': 'أبها',
+        };
+        return CITIES[city] || city;
+    };
+
+    const translateStatus = (status: string) => {
+        const STATUSES: Record<string, string> = {
+            'PENDING': 'قيد الانتظار',
+            'ACCEPTED': 'تم القبول',
+            'COMPLETED': 'مكتمل',
+            'CANCELLED': 'ملغي',
+        };
+        return STATUSES[status] || status;
+    };
 
     return (
         <div className="max-w-7xl mx-auto py-10 px-4" dir="rtl">
@@ -134,14 +165,15 @@ export default function RequestDetailsPage({ params }: { params: Promise<{ id: s
                             <div>
                                 <h1 className="text-3xl font-bold text-gray-900 mb-2">{request.title}</h1>
                                 <div className="flex gap-4 text-sm text-gray-500">
-                                    <span>📍 {request.city}</span>
+                                    <span>📍 {translateCity(request.city)}</span>
                                     <span>📅 نُشر في {new Date(request.createdAt).toLocaleDateString('ar-SA')}</span>
                                 </div>
                             </div>
                             <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-sm ${request.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                                request.status === 'ACCEPTED' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                                request.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                                    request.status === 'CANCELLED' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
                                 }`}>
-                                {request.status === 'PENDING' ? 'قيد الانتظار' : request.status}
+                                {translateStatus(request.status)}
                             </span>
                         </div>
 
@@ -442,8 +474,8 @@ export default function RequestDetailsPage({ params }: { params: Promise<{ id: s
             )}
             {/* Offer Acceptance Confirmation Modal */}
             {isAcceptModalOpen && selectedOfferForAccept && (
-                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden relative">
+                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                    <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative flex flex-col my-auto border border-white/20 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         {!isAcceptedSuccess ? (
                             <>
                                 <div className="p-8 text-center bg-gray-50/50 border-b border-gray-100">
@@ -468,23 +500,66 @@ export default function RequestDetailsPage({ params }: { params: Promise<{ id: s
                                         </div>
                                     </div>
 
+                                    {/* Payment Selection */}
+                                    <div className="space-y-3">
+                                        <p className="text-sm font-bold text-gray-900 text-right">طريقة الدفع</p>
+                                        <div className="grid grid-cols-2 gap-3" dir="rtl">
+                                            <button
+                                                onClick={() => setPaymentMethod('CARD')}
+                                                className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${paymentMethod === 'CARD' ? 'border-primary bg-blue-50/50 scale-[1.02] shadow-sm' : 'border-gray-100 hover:border-gray-200 bg-white'}`}
+                                            >
+                                                <span className="text-2xl">💳</span>
+                                                <span className={`text-sm font-bold ${paymentMethod === 'CARD' ? 'text-primary' : 'text-gray-600'}`}>الدفع الإلكتروني</span>
+                                            </button>
+
+                                            <button
+                                                onClick={() => setPaymentMethod('COD')}
+                                                className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${paymentMethod === 'COD' ? 'border-primary bg-blue-50/50 scale-[1.02] shadow-sm' : 'border-gray-100 hover:border-gray-200 bg-white'}`}
+                                            >
+                                                <span className="text-2xl">💵</span>
+                                                <span className={`text-sm font-bold ${paymentMethod === 'COD' ? 'text-primary' : 'text-gray-600'}`}>الدفع عند الاستلام</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Card Payment Simulator Form (Mock) */}
+                                    {paymentMethod === 'CARD' && (
+                                        <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100 text-right animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <input type="text" placeholder="رقم البطاقة (0000 0000 0000 0000)" className="w-full p-3 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <input type="text" placeholder="تاريخ الانتهاء (MM/YY)" className="w-full p-3 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                                                <input type="text" placeholder="الرمز (CVC)" className="w-full p-3 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {paymentMethod === 'COD' && (
+                                        <div className="bg-green-50 p-4 rounded-xl border border-green-100 text-right animate-in fade-in slide-in-from-top-2 duration-300 flex items-start gap-3">
+                                            <span className="text-xl">🚚</span>
+                                            <p className="text-sm font-medium text-green-800 leading-relaxed">ستقوم بدفع الدفعة الأولى أو كامل المبلغ إلى المصنع أو شركة الشحن عند استلام الأثاث في موقعك.</p>
+                                        </div>
+                                    )}
+
                                     <div className="flex gap-4">
                                         <button
                                             onClick={() => setIsAcceptModalOpen(false)}
                                             className="flex-1 px-6 py-4 rounded-2xl font-bold text-gray-400 hover:bg-gray-100 transition-all border border-gray-100"
-                                            disabled={isAccepting}
+                                            disabled={isProcessingPayment}
                                         >
                                             تراجع
                                         </button>
                                         <button
                                             onClick={handleAcceptOffer}
-                                            disabled={isAccepting}
+                                            disabled={isProcessingPayment}
                                             className="flex-[2] btn-primary py-4 text-lg shadow-xl shadow-blue-200 flex items-center justify-center gap-2"
                                         >
-                                            {isAccepting ? (
-                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            {isProcessingPayment ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                    <span>{paymentMethod === 'CARD' ? 'جاري الدفع...' : 'جاري التأكيد...'}</span>
+                                                </div>
                                             ) : (
-                                                'تأكيد وابدأ الإنتاج'
+                                                paymentMethod === 'CARD' ? 'دفع وتأكيد الطلب' : 'تأكيد الطلب الآن'
                                             )}
                                         </button>
                                     </div>
