@@ -79,7 +79,11 @@ export default function Navbar() {
 
                     {user ? (
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-600">{t('dash.welcome').split(', ')[0]}, <span className="font-bold">{user.fullName}</span></span>
+                            <span className="text-sm text-gray-600">
+                                {t('dash.welcome').split('{name}')[0]}
+                                <span className="font-bold">{user.fullName}</span>
+                                {t('dash.welcome').split('{name}')[1]}
+                            </span>
                             <button
                                 onClick={logout}
                                 className="px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 rounded-btn transition-all"
