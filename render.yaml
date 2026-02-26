@@ -5,7 +5,7 @@ services:
     env: node
     region: frankfurt
     buildCommand: npm install && npx prisma generate --schema=apps/api/prisma/schema.prisma && npm run build --workspace=@athathi/api
-    startCommand: cd apps/api && npx prisma migrate deploy && node dist/main.js
+    startCommand: cd apps/api && npx prisma migrate deploy && node dist/src/main.js
     envVars:
       - key: NODE_VERSION
         value: "20.10.0"
