@@ -1,0 +1,37 @@
+services:
+  # 1. Backend API Service
+  - type: web
+    name: athathi-api
+    env: node
+    region: frankfurt
+    buildCommand: npm install && cd apps/api && npx prisma generate && npm run build
+    startCommand: cd apps/api && npx prisma migrate deploy && node dist/main.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: athathi-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: "4000"
+      - key: CLIENT_URL
+        value: "https://athathi-web.onrender.com" # Frontend URL
+
+  # 2. Frontend Next.js Service
+  - type: web
+    name: athathi-web
+    env: node
+    region: frankfurt
+    buildCommand: npm install && npm run build --workspace=@athathi/web
+    startCommand: cd apps/web && npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: "https://athathi-api.onrender.com" # Backend URL
+
+databases:
+  # PostgreSQL Database
+  - name: athathi-db
+    databaseName: athathidb
+    user: athathiuser
+    region: frankfurt
