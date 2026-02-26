@@ -7,7 +7,6 @@ import { RequestModule } from './request/request.module';
 import { OfferModule } from './offer/offer.module';
 import { OrderModule } from './order/order.module';
 import { ChatModule } from './chat/chat.module';
-import { StripeModule } from './stripe/stripe.module';
 import { StorageModule } from './storage/storage.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -26,7 +25,6 @@ import { join } from 'path';
         OfferModule,
         OrderModule,
         ChatModule,
-        StripeModule,
         StorageModule,
     ],
 })
