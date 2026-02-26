@@ -1,4 +1,5 @@
-import { Controller, Post, UseInterceptors, UploadedFiles, UseGuards } from '@nestjs/common';
+import { Controller, Post, UseInterceptors, UploadedFiles, UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -24,8 +25,12 @@ export class StorageController {
             cb(null, true);
         },
     }))
-    uploadFiles(@UploadedFiles() files: Express.Multer.File[]) {
-        const urls = files.map(file => `http://localhost:4000/uploads/${file.filename}`);
+    uploadFiles(@UploadedFiles() files: Express.Multer.File[], @Req() req: Request) {
+        const protocol = req.protocol === 'https' || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+        const host = req.get('host');
+        const baseUrl = `${protocol}://${host}`;
+
+        const urls = files.map(file => `${baseUrl}/uploads/${file.filename}`);
         return { urls };
     }
 }
